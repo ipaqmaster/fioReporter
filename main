@@ -1,0 +1,93 @@
+#!/usr/bin/env python
+
+import argparse
+import json
+import os
+
+
+def convert(input):
+    keys = ['KB/s', 'MB/s', 'GB/s', 'TB/s']
+
+    count = 0
+    divised = input
+
+    for _ in range(0, len(keys)):
+        divised = divised / 1024
+        count = count + 1
+        if divised < 1024:
+            break
+
+    return("%s %s" % (round(divised, 2), keys[count - 1]))
+
+def main():
+
+    parser = argparse.ArgumentParser(
+            prog='fioReporter',
+            description='Compare results of one or more fio benchmarks.'
+            )
+
+    parser.add_argument(
+            '--files',
+            required=True,
+            nargs='+',
+            help='One or more files to parse as arguments'
+            )
+
+    parser.add_argument(
+            '--mode',
+            type=str,
+            default='read',
+            help='Which test results to focus on. Default: read'
+            )
+
+    parser.add_argument(
+            '--sort',
+            type=str,
+            default=None,
+            help='A key to sort results by. Default: None'
+            )
+
+    parser.add_argument(
+            '--sort-direction',
+            type=str,
+            default='highest',
+            help='Which direction to sort by (highest/lowest)'
+            )
+
+
+    args = parser.parse_args()
+    jobs = {}
+
+    for file in args.files:
+        if not os.path.isfile(file):
+            print("Skiping non-file: %s" % file)
+            continue
+    
+        with open(file) as f:
+            data = json.loads(f.read())
+
+        timestamp = data['time']
+
+        for job in data['jobs']:
+            
+            jobs[job['jobname']] = {}
+            jobs[job['jobname']]['timestamp'] = timestamp
+
+            #import pprint
+            #pprint.pprint(job[args.mode])
+            jobs[job['jobname']]['iops_mean'] = job[args.mode]['iops_mean']
+            jobs[job['jobname']]['bandwidth'] = convert(job[args.mode]['bw_bytes'])
+            jobs[job['jobname']]['bandwidth_bytes'] = job[args.mode]['bw_bytes']
+
+
+    # Output report
+    for job in jobs:
+        print(job)
+
+        for key in jobs[job]:
+            print("\t%s: %s" % (key, jobs[job][key]))
+
+
+
+if __name__ == '__main__':
+    main()
