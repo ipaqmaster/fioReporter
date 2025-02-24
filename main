@@ -63,6 +63,7 @@ def main():
             print("Skiping non-file: %s" % file)
             continue
     
+        print("Processing %s" % file)
         with open(file) as f:
             data = json.loads(f.read())
 
