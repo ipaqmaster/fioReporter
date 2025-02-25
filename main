@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import collections
 import json
 import os
 
@@ -48,10 +49,10 @@ def main():
             )
 
     parser.add_argument(
-            '--sort-direction',
-            type=str,
-            default='highest',
-            help='Which direction to sort by (highest/lowest)'
+            '--sort-reverse',
+            action='store_true',
+            default=False,
+            help='Whether to invert the sorting direction. Default: False'
             )
 
 
@@ -80,6 +81,11 @@ def main():
             jobs[job['jobname']]['bandwidth'] = convert(job[args.mode]['bw_bytes'])
             jobs[job['jobname']]['bandwidth_bytes'] = job[args.mode]['bw_bytes']
 
+
+    # Handle optional sorting
+    if args.sort:
+        print('Sorting...')
+        jobs = collections.OrderedDict(sorted(jobs.items(), key=lambda t:t[1][args.sort], reverse=args.sort_reverse))
 
     # Output report
     for job in jobs:
